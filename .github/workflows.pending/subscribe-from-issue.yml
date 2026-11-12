@@ -46,6 +46,13 @@ jobs:
             --write \
             --pr-body /tmp/pr-body.md
 
+      - name: Ensure subscription label
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh label create subscription --color bfdadc --description "话题订阅请求" --force || true
+
       - name: Open pull request
         uses: peter-evans/create-pull-request@v6
         with:

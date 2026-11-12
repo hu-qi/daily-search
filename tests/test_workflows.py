@@ -8,7 +8,6 @@ from pathlib import Path
 import pytest
 import yaml
 
-WORKFLOW_DIR = Path(".github") / "workflows.pending"
 TEMPLATE_DIR = Path(".github") / "ISSUE_TEMPLATE"
 EXPECTED_WORKFLOWS = [
     "daily-search.yml",
@@ -20,6 +19,14 @@ EXPECTED_WORKFLOWS = [
 ]
 
 
+def _workflow_dir(repo_root: Path) -> Path:
+    """workflow 激活（pending → workflows）后测试无需改代码。"""
+    for candidate in (Path(".github") / "workflows", Path(".github") / "workflows.pending"):
+        if (repo_root / candidate).is_dir():
+            return candidate
+    return Path(".github") / "workflows.pending"
+
+
 def _triggers(data: dict) -> dict:
     # PyYAML 会把未加引号的 on: 解析成布尔 True
     triggers = data.get("on", data.get(True))
@@ -29,7 +36,7 @@ def _triggers(data: dict) -> dict:
 
 @pytest.mark.parametrize("name", EXPECTED_WORKFLOWS)
 def test_workflow_file_valid_and_manual(repo_root: Path, name: str) -> None:
-    path = repo_root / WORKFLOW_DIR / name
+    path = repo_root / _workflow_dir(repo_root) / name
     assert path.is_file(), f"缺少 workflow：{name}"
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
     assert isinstance(data, dict)
@@ -41,14 +48,23 @@ def test_workflow_file_valid_and_manual(repo_root: Path, name: str) -> None:
 
 
 def test_daily_search_schedule_is_0800_beijing(repo_root: Path) -> None:
-    data = yaml.safe_load((repo_root / WORKFLOW_DIR / "daily-search.yml").read_text(encoding="utf-8"))
+    data = yaml.safe_load((repo_root / _workflow_dir(repo_root) / "daily-search.yml").read_text(encoding="utf-8"))
     schedule = _triggers(data)["schedule"]
     assert schedule[0]["cron"] == "0 0 * * *"  # UTC 00:00 = 北京时间 08:00
 
 
+def test_pages_watches_daily_search_workflow_run(repo_root: Path) -> None:
+    data = yaml.safe_load(
+        (repo_root / _workflow_dir(repo_root) / "pages.yml").read_text(encoding="utf-8")
+    )
+    triggers = _triggers(data)
+    assert triggers["workflow_run"]["workflows"] == ["daily-search"]
+    assert "completed" in triggers["workflow_run"]["types"]
+
+
 def test_no_workflow_passes_secrets_to_fork_prs(repo_root: Path) -> None:
     for name in EXPECTED_WORKFLOWS:
-        text = (repo_root / WORKFLOW_DIR / name).read_text(encoding="utf-8")
+        text = (repo_root / _workflow_dir(repo_root) / name).read_text(encoding="utf-8")
         assert "pull_request_target" not in text, f"{name} 不应使用 pull_request_target"
         if "pull_request:" in text:
             assert "secrets." not in text.split("pull_request:")[1].split("jobs:")[0]
@@ -91,7 +107,7 @@ def test_repo_contains_no_plaintext_credentials(repo_root: Path) -> None:
 
 def test_workflow_secret_references_are_expressions(repo_root: Path) -> None:
     for name in EXPECTED_WORKFLOWS:
-        text = (repo_root / WORKFLOW_DIR / name).read_text(encoding="utf-8")
+        text = (repo_root / _workflow_dir(repo_root) / name).read_text(encoding="utf-8")
         for match in re.finditer(r"^\s*(LLM_API_KEY|LLM_BASE_URL|LLM_MODEL|GH_TOKEN|FEISHU_WEBHOOK_URL|WECOM_WEBHOOK_URL):\s*(.+)$", text, re.M):
             value = match.group(2).strip()
             assert value.startswith("${{"), f"{name} 中 {match.group(1)} 必须来自 secrets 表达式"

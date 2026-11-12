@@ -81,7 +81,7 @@ CLI 子命令：`run` / `spike` / `subscribe` / `comment` / `notify` / `pages`�
 | --- | --- | --- |
 | `LLM_BASE_URL` | 可选 | OpenAI 兼容接口地址（如 `https://host/v1`） |
 | `LLM_API_KEY` | 可选 | LLM 凭据；缺失 → 自动降级为「仅新增链接列表」 |
-| `LLM_MODEL` | 可选 | 模型名（默认 `antigravity/gemini-3.8-flash`） |
+| `LLM_MODEL` | 可选 | 模型名；与 `LLM_BASE_URL`/`LLM_API_KEY` 三者齐全才启用 LLM，否则降级为仅链接列表 |
 | `FEISHU_WEBHOOK_URL` | 可选 | 飞书机器人 webhook；缺失 → 跳过该渠道并 warn |
 | `WECOM_WEBHOOK_URL` | 可选 | 企业微信机器人 webhook；缺失 → 跳过 |
 | `GITHUB_TOKEN` | 内置 | workflow 自带；用于建 Issue、提交报告、开订阅 PR |
@@ -99,7 +99,7 @@ CLI 子命令：`run` / `spike` / `subscribe` / `comment` / `notify` / `pages`�
 | `subscribe-from-issue.yml` | Issue 打开/编辑（含「话题名称」段落）+ 手动 | 校验订阅字段 → 改 `topics.yaml` → 开 PR |
 | `issue-comment-agent.yml` | Issue 评论 `/deep` `/mute` `/why` + 手动 | 权限校验（OWNER/MEMBER/COLLABORATOR）→ 执行 → 回帖 |
 | `notify.yml` | `daily-search` 成功后 + 手动 | 把当日 `index.md` 摘要推送到飞书/企微 |
-| `pages.yml` | `reports/**`、`feed.xml` 变更 + 手动 | 生成静态归档并部署 GitHub Pages |
+| `pages.yml` | `daily-search` 完成（`workflow_run`）+ `reports/**`、`feed.xml` push + 手动 | 生成静态归档并部署 GitHub Pages |
 | `ci.yml` | push/PR + 手动 | `pytest` + `compileall` |
 
 ### ⚠️ 首次启用：把 workflow 放到 `.github/workflows/`
@@ -111,7 +111,9 @@ git mv .github/workflows.pending/*.yml .github/workflows/
 git commit -m "ci: 启用 Actions workflows" && git push
 ```
 
-原因：写入 `.github/workflows/*` 需要 **`workflow` scope** 的凭据，而当前用于推送的凭据只有 `repo` 权限（GitHub 报 `refusing to allow a Personal Access Token to create or update workflow ... without workflow scope`）。为不让整条分支推送失败，workflow 文件先落在可推送的目录，内容与最终版本一致（`tests/test_workflows.py` 校验 YAML 合法、均含 `workflow_dispatch`、权限最小化、无明文凭据）。
+原因：写入 `.github/workflows/*` 需要 **`workflow` scope** 的凭据，而当前用于推送的凭据只有 `repo` 权限（GitHub 报 `refusing to allow a Personal Access Token to create or update workflow ... without workflow scope`）。为不让整条分支推送失败，workflow 文件先落在可推送的目录，内容与最终版本一致（`tests/test_workflows.py` 校验 YAML 合法、均含 `workflow_dispatch`、权限最小化、无明文凭据）；测试会自动识别 `workflows/` 或 `workflows.pending/`，激活后无需改测试。
+
+另需在 **Settings → Actions → General → Workflow permissions** 勾选 **Allow GitHub Actions to create and approve pull requests**，否则 `subscribe-from-issue.yml` 无法自动开订阅 PR（`subscription` 标签会由 workflow 自动创建）。
 
 ---
 
@@ -119,8 +121,9 @@ git commit -m "ci: 启用 Actions workflows" && git push
 
 1. **URL 层**：去 `utm_*/spm/ref/from` 等追踪参数、host 小写去 `www`、`http→https`、去尾斜杠与 fragment、query 排序 → `sha256` 指纹。
 2. **语义层**：标题 + 摘要做 NFKC 归一化、去标点空白，取字符 3-gram，Jaccard ≥ `semantic_threshold`（默认 0.85）判为同一事件——覆盖「换域名/换链接但内容相同」。
-3. **快照**：`data/<slug>/latest.json` 存 `url_hash / norm_hash / first_seen / last_seen`，保留 14 天（`snapshot_retention_days`）。
+3. **快照**：`data/<slug>/latest.json` 存 `url_hash / norm_hash / first_seen / last_seen`，保留 14 天（`snapshot_retention_days`）。命中旧条目时刷新 `last_seen`，避免快照裁剪后旧闻被重新判为新增。
 4. **统计**：报告头与 Issue 都给出 `新增 / 候选 / 重复率`；`tests/test_dedupe.py` 用固定双日 fixture 断言第二天重复率 < 10%。
+5. **不丢新增**：LLM 只挑选部分条目时，其余新增会进入「其他新增链接」小节；报告与 Issue 的「新增 N」始终等于全部新增链接数。
 
 快照损坏/缺失时按「无历史」处理并告警，不阻断当天产出。
 

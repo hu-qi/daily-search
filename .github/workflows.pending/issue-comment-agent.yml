@@ -45,13 +45,15 @@ jobs:
           COMMENT_ASSOCIATION: ${{ github.event.comment.author_association }}
           ISSUE_NUMBER: ${{ github.event.issue.number || github.event.inputs.issue_number }}
         run: |
-          set -euo pipefail
+          set -uo pipefail
           printf '%s' "${COMMENT_BODY}" > /tmp/comment-body.md
+          # 指令被拒绝/未识别时 CLI 返回 1，仍要把解释回帖，不能因此中断 step
           python -m daily_search comment \
             --body-file /tmp/comment-body.md \
             --author "${COMMENT_AUTHOR}" \
             --association "${COMMENT_ASSOCIATION}" \
-            --issue-number "${ISSUE_NUMBER}" | tee /tmp/reply.md
+            --issue-number "${ISSUE_NUMBER}" > /tmp/reply.md 2>&1 || true
+          cat /tmp/reply.md
 
       - name: Reply
         env:

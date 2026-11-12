@@ -26,4 +26,6 @@ git push
 pytest -q tests/test_workflows.py -v
 ```
 
-`tests/test_workflows.py` 会校验：6 个文件存在、YAML 合法、均含 `workflow_dispatch`、声明了最小权限、未使用 `pull_request_target`、敏感变量均来自 `secrets` 表达式。该测试按本目录路径断言，改名后需同步把 `tests/test_workflows.py` 里的 `WORKFLOW_DIR` 改为 `.github/workflows`。
+`tests/test_workflows.py` 会校验：6 个文件存在、YAML 合法、均含 `workflow_dispatch`、声明了最小权限、未使用 `pull_request_target`、敏感变量均来自 `secrets` 表达式。测试会自动识别 `.github/workflows/` 或 `.github/workflows.pending/`，改名后无需修改测试。
+
+`pages.yml` 监听 `daily-search` 的 `workflow_run` 完成事件：由 `GITHUB_TOKEN` 推送的报告不会触发 `push` 工作流，必须靠该事件保证 Pages 随每日报告更新。另需在 **Settings → Actions → General → Workflow permissions** 勾选 **Allow GitHub Actions to create and approve pull requests**，订阅 PR 才能自动创建。

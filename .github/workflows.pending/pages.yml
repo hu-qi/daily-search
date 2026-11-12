@@ -1,6 +1,11 @@
 name: pages
 
 on:
+  # daily-search 由 GITHUB_TOKEN 推送的报告不会触发 push workflow_run，
+  # 因此必须显式监听 daily-search 完成事件，Pages 才会随每日报告更新。
+  workflow_run:
+    workflows: ["daily-search"]
+    types: [completed]
   push:
     branches: [main]
     paths:
@@ -19,6 +24,7 @@ concurrency:
 
 jobs:
   build:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
