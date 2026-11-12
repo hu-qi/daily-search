@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "slug": "昇腾-cann",
+  "updated_at": "2026-11-12T14:59:15+08:00",
+  "entries": [
+    {
+      "url": "https://www.hiascend.com/developer/blog/cann-8-release?utm_source=wechat",
+      "url_hash": "80170a41ec0a6caee0a0a85bb37facb6fee0a86297399d824f28d726222285ea",
+      "norm_hash": "f2604b8fa8186db982df988858a3e4830f6bfd3b",
+      "title": "昇腾 CANN 8.0 发布：算子开发与图引擎全面升级",
+      "snippet": "CANN 8.0 在算子开发框架、图引擎编译与昇腾 AI 云上推理链路上做了整轮升级，官方给出迁移指引。",
+      "source": "fixture",
+      "first_seen": "2026-11-11",
+      "last_seen": "2026-11-11"
+    },
+    {
+      "url": "https://gitee.com/ascend/cann-ops",
+      "url_hash": "433520a95ad17b0e62ef5ac7a0a214ad7e78e3aa190cf59997a3b42cec504666",
+      "norm_hash": "9dd70d618892568d37d353d498a605acebf42849",
+      "title": "Ascend/cann-ops 仓库新增 30 个融合算子示例",
+      "snippet": "面向 Atlas A2 训练卡的融合算子示例合入，覆盖 FlashAttention、MoE 与量化场景。",
+      "source": "fixture",
+      "first_seen": "2026-11-11",
+      "last_seen": "2026-11-11"
+    },
+    {
+      "url": "https://www.hiascend.com/document/detail/zh/canncommercial/80RC3/tools/msprof",
+      "url_hash": "740b4894e3927bee578592bad44ae1a638834b0bd2a350aa613cc2cb46ec4a94",
+      "norm_hash": "0ee50249449e8de6b9faadda0f284c655344e5ce",
+      "title": "昇腾社区上线 CANN 算子调优工具 msprof 新版文档",
+      "snippet": "msprof 新增算子耗时拆解视图，配套给出典型融合算子的调优样例。",
+      "source": "fixture",
+      "first_seen": "2026-11-11",
+      "last_seen": "2026-11-11"
+    }
+  ]
+}

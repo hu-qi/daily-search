@@ -1,0 +1,59 @@
+{
+  "topics": {
+    "昇腾-cann": [
+      {
+        "title": "昇腾 CANN 8.0 发布：算子开发与图引擎全面升级",
+        "url": "https://www.hiascend.com/developer/blog/cann-8-release?utm_source=wechat",
+        "snippet": "CANN 8.0 在算子开发框架、图引擎编译与昇腾 AI 云上推理链路上做了整轮升级，官方给出迁移指引。",
+        "published_at": "2026-11-11T02:10:00+08:00",
+        "source": "fixture"
+      },
+      {
+        "title": "Ascend/cann-ops 仓库新增 30 个融合算子示例",
+        "url": "https://gitee.com/ascend/cann-ops",
+        "snippet": "面向 Atlas A2 训练卡的融合算子示例合入，覆盖 FlashAttention、MoE 与量化场景。",
+        "published_at": "2026-11-11T09:30:00+08:00",
+        "source": "fixture"
+      },
+      {
+        "title": "昇腾社区上线 CANN 算子调优工具 msprof 新版文档",
+        "url": "https://www.hiascend.com/document/detail/zh/canncommercial/80RC3/tools/msprof",
+        "snippet": "msprof 新增算子耗时拆解视图，配套给出典型融合算子的调优样例。",
+        "published_at": "2026-11-11T11:05:00+08:00",
+        "source": "fixture"
+      }
+    ],
+    "鸿蒙-ohpm": [
+      {
+        "title": "OHPM 中心仓新增依赖安全扫描与许可证合规检查",
+        "url": "https://ohpm.openharmony.cn/#/cn/detail/security-scan",
+        "snippet": "OpenHarmony 三方库中心仓对上传包增加依赖漏洞扫描与许可证合规校验，未通过将阻止发布。",
+        "published_at": "2026-11-11T10:00:00+08:00",
+        "source": "fixture"
+      },
+      {
+        "title": "openharmony/ohpm 命令行工具发布 5.0.6：支持工作区多模块联调",
+        "url": "https://gitee.com/openharmony/ohpm/releases",
+        "snippet": "ohpm 5.0.6 支持工作区内多模块并行安装与本地 link，缩短大型应用构建时间。",
+        "published_at": "2026-11-11T08:20:00+08:00",
+        "source": "fixture"
+      }
+    ],
+    "具身智能政策": [
+      {
+        "title": "工信部就人形机器人创新发展指导意见配套细则公开征求意见",
+        "url": "https://www.miit.gov.cn/zwgk/zcjd/index.html",
+        "snippet": "配套细则明确具身智能整机与关键零部件的测试验证要求，并对公共训练场建设给出支持措施。",
+        "published_at": "2026-11-11T16:00:00+08:00",
+        "source": "fixture"
+      },
+      {
+        "title": "多地发布具身智能产业行动方案：聚焦数据与场景开放",
+        "url": "https://www.gov.cn/zhengce/",
+        "snippet": "行动方案提出开放工厂、物流、康养等场景，建设具身智能数据采集与训练基础设施。",
+        "published_at": "2026-11-11T18:40:00+08:00",
+        "source": "fixture"
+      }
+    ]
+  }
+}
