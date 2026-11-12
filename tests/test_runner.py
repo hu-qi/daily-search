@@ -61,6 +61,17 @@ def test_second_run_same_day_has_no_new_items(repo_root: Path, tmp_path: Path) -
         assert run.digest.stats["repeat_rate"] == pytest.approx(1.0)
 
 
+def test_single_topic_run_does_not_overwrite_daily_index(repo_root: Path, tmp_path: Path) -> None:
+    fixture = repo_root / "fixtures" / "search-2026-11-11.json"
+    _runner(repo_root, tmp_path, fixture).run(day="2026-11-11")
+    index_path = tmp_path / "reports" / "2026-11-11" / "index.md"
+    before = index_path.read_text(encoding="utf-8")
+    assert "鸿蒙 OHPM" in before
+
+    _runner(repo_root, tmp_path, fixture).run(day="2026-11-11", topic_filter="昇腾-cann")
+    assert index_path.read_text(encoding="utf-8") == before
+
+
 def test_all_providers_down_still_writes_degraded_report(repo_root: Path, tmp_path: Path) -> None:
     class _Broken:
         name = "broken"

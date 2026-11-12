@@ -65,9 +65,19 @@ def render_topic_report(
                 f" · 置信度：{confidence}{marker}"
             )
         lines.append("")
+        if digest.unreferenced:
+            lines += ["## 其他新增链接", ""]
+            for point in digest.unreferenced:
+                lines.append(f"- [{point.title}]({point.url}) — {point.note or '未纳入摘要'}")
+            lines.append("")
         lines += ["## 原始链接", ""]
-        for point in digest.points:
+        for point in digest.all_points:
             lines.append(f"- [{point.title}]({point.url})")
+        lines.append("")
+    elif digest.unreferenced:
+        lines += ["## 其他新增链接", ""]
+        for point in digest.unreferenced:
+            lines.append(f"- [{point.title}]({point.url}) — {point.note or '未纳入摘要'}")
         lines.append("")
     else:
         lines += ["## 新增要点", "", "今日无新增条目。", ""]

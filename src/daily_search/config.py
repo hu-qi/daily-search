@@ -33,6 +33,8 @@ class TopicConfig(BaseModel):
     channels: Channels = Field(default_factory=Channels)
     max_results: int | None = Field(default=None, ge=1, le=100)
     provider_order: list[str] | None = None
+    # 话题级兜底 RSS；支持 {query}/{topic} 占位符（按关键词构造检索源）
+    fallback_feeds: list[str] | None = None
 
     @field_validator("topic")
     @classmethod
@@ -113,6 +115,10 @@ class AppConfig(BaseModel):
 
     def max_results_for(self, topic: TopicConfig) -> int:
         return topic.max_results or self.defaults.max_results
+
+    def fallback_feeds_for(self, topic: TopicConfig) -> list[str]:
+        """话题级兜底源优先，未配置时回落到 defaults。"""
+        return topic.fallback_feeds or self.defaults.fallback_feeds
 
 
 def load_config(path: str | Path) -> AppConfig:

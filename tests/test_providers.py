@@ -162,6 +162,28 @@ def test_fallback_provider_uses_injected_fetch() -> None:
     assert results[0].source == "fallback_rss"
 
 
+def test_fallback_feed_expands_topic_query_placeholder() -> None:
+    requested: list[str] = []
+
+    def fetcher(url: str) -> str:
+        requested.append(url)
+        return RSS
+
+    provider = FallbackRssProvider(["https://feed.example/rss?q={query}"], fetch=fetcher)
+    provider.search(TOPIC, max_results=5)
+    assert requested == ["https://feed.example/rss?q=%E6%98%87%E8%85%BE+OR+CANN"]
+
+
+def test_topic_level_fallback_feeds_override_defaults() -> None:
+    requested: list[str] = []
+    provider = FallbackRssProvider(
+        ["https://default.example/rss"], fetch=lambda url: requested.append(url) or RSS
+    )
+    topic = TOPIC.model_copy(update={"fallback_feeds": ["https://topic.example/rss?q={topic}"]})
+    provider.search(topic, max_results=5)
+    assert requested == ["https://topic.example/rss?q=%E6%98%87%E8%85%BE+CANN"]
+
+
 def test_fixture_provider_parses_rows(tmp_path) -> None:
     import json
 

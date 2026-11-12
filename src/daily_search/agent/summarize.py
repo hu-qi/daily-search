@@ -55,11 +55,18 @@ class TopicDigest:
     date: str
     summary: str
     points: list[DigestPoint] = field(default_factory=list)
+    # LLM 只挑选了部分条目时，未被引用的新增条目也必须保留链接，
+    # 否则快照已写入「已见」但报告/Issue 永久丢失（违反「只推新增」）。
+    unreferenced: list[DigestPoint] = field(default_factory=list)
     degraded: bool = False
     degraded_reason: str = ""
     provider: str = ""
     fallback_reason: str = ""
     stats: dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def all_points(self) -> list[DigestPoint]:
+        return [*self.points, *self.unreferenced]
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -68,6 +75,7 @@ class TopicDigest:
             "date": self.date,
             "summary": self.summary,
             "points": [point.to_dict() for point in self.points],
+            "unreferenced": [point.to_dict() for point in self.unreferenced],
             "degraded": self.degraded,
             "degraded_reason": self.degraded_reason,
             "provider": self.provider,
@@ -76,9 +84,9 @@ class TopicDigest:
         }
 
 
-def _format_items(items: Sequence[SearchResult]) -> str:
+def _format_items(items: Sequence[SearchResult], limit: int = MAX_ITEMS_IN_PROMPT) -> str:
     lines: list[str] = []
-    for index, item in enumerate(items[:MAX_ITEMS_IN_PROMPT], start=1):
+    for index, item in enumerate(items[: max(1, limit)], start=1):
         snippet = re.sub(r"\s+", " ", item.snippet)[:SNIPPET_IN_PROMPT]
         lines.append(f"{index}. {item.title}\n   url: {item.url}\n   摘要: {snippet}")
     return "\n".join(lines)
@@ -144,9 +152,15 @@ class Completer(Protocol):
 class Summarizer:
     """把新增条目压缩成一页摘要；任何 LLM 异常都必须保留链接列表。"""
 
-    def __init__(self, client: Completer | None = None, max_points: int = 8) -> None:
+    def __init__(
+        self,
+        client: Completer | None = None,
+        max_points: int = 8,
+        max_items_in_prompt: int = MAX_ITEMS_IN_PROMPT,
+    ) -> None:
         self.client = client
         self.max_points = max_points
+        self.max_items_in_prompt = max_items_in_prompt
 
     def summarize(
         self,
@@ -157,6 +171,7 @@ class Summarizer:
         stats: dict[str, Any] | None = None,
         provider: str = "",
         fallback_reason: str = "",
+        max_items: int | None = None,
     ) -> TopicDigest:
         stats = stats or {}
         if not items:
@@ -178,10 +193,11 @@ class Summarizer:
                 topic_name, slug, today, items, "未配置 LLM", provider, fallback_reason, stats
             )
 
+        prompt_limit = max_items if max_items is not None else self.max_items_in_prompt
         prompt = PROMPT_TEMPLATE.format(
             topic=topic_name,
             today=today,
-            items=_format_items(items),
+            items=_format_items(items, prompt_limit),
             max_points=self.max_points,
         )
         try:
@@ -195,6 +211,7 @@ class Summarizer:
 
         allowed = {item.url: item for item in items}
         points: list[DigestPoint] = []
+        used_urls: set[str] = set()
         for raw in data.get("points") or []:
             if not isinstance(raw, dict):
                 continue
@@ -203,6 +220,8 @@ class Summarizer:
             if item is None:
                 # 模型改了链接/编造链接：丢弃该条，绝不输出非来源链接
                 logger.warning("丢弃 LLM 返回的非来源链接（slug=%s）", slug)
+                continue
+            if url in used_urls:
                 continue
             confidence = str(raw.get("confidence") or "medium").lower()
             if confidence not in {"high", "medium", "low"}:
@@ -216,6 +235,7 @@ class Summarizer:
                     worth_following=bool(raw.get("worth_following", True)),
                 )
             )
+            used_urls.add(url)
             if len(points) >= self.max_points:
                 break
 
@@ -224,6 +244,20 @@ class Summarizer:
                 topic_name, slug, today, items, "LLM 未返回可用的新增要点", provider, fallback_reason, stats
             )
 
+        # LLM 成功但只挑选了部分条目：其余新增条目补为「其他新增链接」，
+        # 保证快照写入已见的每条新增在当日产出中都有落点。
+        unreferenced = [
+            DigestPoint(
+                title=item.title,
+                url=item.url,
+                note="（未纳入 LLM 摘要，仅保留原始链接）",
+                confidence="unknown",
+                worth_following=False,
+            )
+            for item in items
+            if item.url not in used_urls
+        ]
+
         summary = str(data.get("summary") or "").strip() or "见下方新增要点。"
         return TopicDigest(
             topic=topic_name,
@@ -231,6 +265,7 @@ class Summarizer:
             date=today,
             summary=summary[:600],
             points=points,
+            unreferenced=unreferenced,
             degraded=False,
             provider=provider,
             fallback_reason=fallback_reason,

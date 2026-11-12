@@ -99,6 +99,27 @@ def test_prompt_contains_links_and_no_secret() -> None:
     assert "禁止编造" in prompt
 
 
+def test_partial_llm_points_are_kept_as_unreferenced_links() -> None:
+    items = [SearchResult(title=f"新增 {i}", url=f"https://example.com/{i}") for i in range(3)]
+    payload = {"summary": "只讲一条", "points": [{"url": "https://example.com/0", "note": "重点"}]}
+    digest = Summarizer(_StubClient(json.dumps(payload, ensure_ascii=False))).summarize(
+        "话题", "t", "2026-11-11", items, {"accepted": 3}
+    )
+    assert len(digest.points) == 1
+    assert [point.url for point in digest.unreferenced] == ["https://example.com/1", "https://example.com/2"]
+    assert [point.url for point in digest.all_points] == [f"https://example.com/{i}" for i in range(3)]
+
+
+def test_prompt_uses_configured_max_items_instead_of_hardcoded_twenty() -> None:
+    items = [SearchResult(title=f"新增 {i}", url=f"https://example.com/{i}") for i in range(25)]
+    client = _StubClient(json.dumps({"summary": "s", "points": [{"url": "https://example.com/0"}]}))
+    digest = Summarizer(client).summarize(
+        "话题", "t", "2026-11-11", items, max_items=25
+    )
+    assert "https://example.com/24" in client.prompts[0]
+    assert len(digest.unreferenced) == 24
+
+
 def test_max_points_limits_output() -> None:
     points = [
         {"url": "https://example.com/1"},

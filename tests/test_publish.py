@@ -49,6 +49,21 @@ def test_topic_report_marks_degraded_and_reason() -> None:
     assert "降级原因：未配置 LLM" in text
 
 
+def test_unreferenced_items_render_as_extra_links() -> None:
+    digest = _digest()
+    digest.unreferenced = [
+        DigestPoint(title="未入摘要的第三条", url="https://example.com/3", note="（未纳入 LLM 摘要）", confidence="unknown")
+    ]
+    report = render_topic_report(digest, "hu-qi/daily-search", "main", generated_at="2026-11-11T00:00:00+00:00")
+    assert "## 其他新增链接" in report
+    assert "https://example.com/3" in report
+
+    body = render_issue_body("2026-11-11", [digest], "hu-qi/daily-search", "main")
+    assert "其他新增链接" in body
+    assert "https://example.com/3" in body
+    assert "今日新增：**3** 条" in body
+
+
 def test_daily_index_links_absolute_report_urls() -> None:
     text = render_daily_index("2026-11-11", [_digest()], "hu-qi/daily-search", "main")
     expected = report_url("hu-qi/daily-search", "main", "2026-11-11", "昇腾-cann")
@@ -178,6 +193,24 @@ def test_im_sent_and_failure_isolated(fake_session) -> None:
     )
     assert results[0]["status"] == "sent"
     assert results[1]["status"] == "failed"
+
+
+def test_im_rejects_business_error_code_even_with_http_200(fake_session) -> None:
+    session = fake_session(
+        [
+            type("R", (), {"status_code": 200, "json": lambda self: {"code": 9499, "msg": "Bad Request"}})(),
+            type("R", (), {"status_code": 200, "json": lambda self: {"errcode": 40001, "errmsg": "invalid"}})(),
+        ]
+    )
+    results = send_notifications(
+        "hi",
+        ["feishu", "wecom"],
+        {"FEISHU_WEBHOOK_URL": "https://example.com/hook1", "WECOM_WEBHOOK_URL": "https://example.com/hook2"},
+        session=session,
+    )
+    assert [row["status"] for row in results] == ["failed", "failed"]
+    assert "9499" in results[0]["reason"]
+    assert "40001" in results[1]["reason"]
 
 
 def test_pages_build_copies_reports_and_feed(tmp_path: Path) -> None:

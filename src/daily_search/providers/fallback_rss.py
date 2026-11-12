@@ -11,6 +11,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 from email.utils import parsedate_to_datetime
 from typing import Callable, Sequence
+from urllib.parse import quote_plus
 
 import requests
 
@@ -126,14 +127,24 @@ class FallbackRssProvider:
         except requests.RequestException as exc:
             raise ProviderError(f"RSS 抓取失败：{url} → {exc.__class__.__name__}") from exc
 
+    @staticmethod
+    def _expand_feed(feed: str, topic: TopicConfig) -> str:
+        """支持按话题关键词构造检索型 RSS（如 Google News），避免通用源与话题错配。"""
+        if "{query}" not in feed and "{topic}" not in feed:
+            return feed
+        query = quote_plus(" OR ".join(topic.keywords))
+        return feed.replace("{query}", query).replace("{topic}", quote_plus(topic.topic))
+
     def search(self, topic: TopicConfig, max_results: int = 20) -> Sequence[SearchResult]:
-        if not self.feeds:
+        configured = topic.fallback_feeds or self.feeds
+        if not configured:
             raise ProviderError("未配置 fallback_feeds，兜底源不可用")
+        feeds = [self._expand_feed(feed, topic) for feed in configured if feed]
 
         results: list[SearchResult] = []
         seen: set[str] = set()
         errors: list[str] = []
-        for feed in self.feeds:
+        for feed in feeds:
             try:
                 xml_text = self._fetch(feed)
             except ProviderError as exc:

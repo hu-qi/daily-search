@@ -13,6 +13,8 @@ defaults:
   llm_token_budget: 8000
   max_queries_per_topic: 3
   fallback_feeds:
+    # {query}/{topic} 会按当前话题关键词展开，保证兜底源与话题匹配
+    - https://news.google.com/rss/search?q={query}&hl=zh-CN&gl=CN&ceid=CN:zh-Hans
     - https://www.solidot.org/index.rss
     - https://sspai.com/feed
 

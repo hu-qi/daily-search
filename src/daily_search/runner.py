@@ -46,7 +46,7 @@ class DailyRun:
 
     @property
     def total_new(self) -> int:
-        return sum(len(run.digest.points) for run in self.topics)
+        return sum(len(run.digest.all_points) for run in self.topics)
 
 
 def resolve_day(value: str | None) -> str:
@@ -150,6 +150,7 @@ class DailyRunner:
                 stats=deduped.stats.to_dict(),
                 provider=info.used,
                 fallback_reason=info.fallback_reason,
+                max_items=max_results,
             )
             report_text = render_topic_report(
                 digest,
@@ -183,7 +184,12 @@ class DailyRunner:
         if dry_run:
             return result
 
-        atomic_write_text(self.root / "reports" / run_day / "index.md", result.index_text)
+        index_path = self.root / "reports" / run_day / "index.md"
+        if topic_filter and index_path.is_file():
+            # 单话题运行只更新自己的报告，不能用局部结果覆盖当日全量 index
+            logger.info("单话题运行，保留已有当日 index.md（不覆盖）")
+        else:
+            atomic_write_text(index_path, result.index_text)
         result.feed_path = self._update_feed(run_day, result, now)
         return result
 
@@ -209,7 +215,7 @@ class DailyRunner:
             )
             new_items.append(
                 build_item(
-                    title=f"{digest.topic} · {run_day}（新增 {len(digest.points)} 条）",
+                    title=f"{digest.topic} · {run_day}（新增 {len(digest.all_points)} 条）",
                     link=link,
                     description=redact_text(digest.summary[:300]),
                     day=run_day,

@@ -13,13 +13,14 @@ from typing import Mapping, Sequence
 from .agent.llm import LLMClient, LLMSettings
 from .agent.summarize import Summarizer
 from .comment_agent import CommentAgent, CommentRequest, CommentResponse
-from .config import ConfigError, AppConfig, load_config
+from .config import ConfigError, AppConfig, TopicConfig, load_config
 from .diff.snapshot import SnapshotStore
 from .logging_utils import redact_text, setup_logging
+from .providers.base import ProviderError
 from .publish.issue import IssuePublisher, render_issue_body
 from .publish.im import render_im_text, send_notifications
 from .publish.pages import build_site
-from .runner import DailyRunner
+from .runner import DailyRunner, build_registry
 from .spike import probe, render_markdown
 from .subscribe import SubscribeError, pr_body, subscribe_from_issue_body
 
@@ -156,10 +157,24 @@ def _cmd_subscribe(args: argparse.Namespace, environ: Mapping[str, str]) -> int:
     return 0
 
 
+def _build_searcher(config: AppConfig, environ: Mapping[str, str]):
+    """为 `/deep` 注入真实搜索能力（与每日运行的 Provider 配置一致）。"""
+    registry = build_registry(config, environ=environ)
+
+    def search(question: str):
+        topic = TopicConfig(topic=question.strip(), keywords=[question.strip()])
+        results, info = registry.search(topic, max_results=5)
+        if not results:
+            raise ProviderError(info.fallback_reason or "搜索无结果")
+        return results
+
+    return search
+
+
 def _cmd_comment(args: argparse.Namespace, environ: Mapping[str, str]) -> int:
     config = load_config(args.config)
     store = SnapshotStore(Path(args.root) / "data", config.defaults.snapshot_retention_days)
-    agent = CommentAgent(config, store=store)
+    agent = CommentAgent(config, store=store, searcher=_build_searcher(config, environ))
     response: CommentResponse = agent.handle(
         CommentRequest(
             body=Path(args.body_file).read_text(encoding="utf-8"),

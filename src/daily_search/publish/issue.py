@@ -29,7 +29,7 @@ def render_issue_body(
     base_branch: str = "main",
     notify_note: str = "",
 ) -> str:
-    total_new = sum(len(digest.points) for digest in digests)
+    total_new = sum(len(digest.all_points) for digest in digests)
     degraded = [digest.topic for digest in digests if digest.degraded]
     lines = [
         f"## 🔍 每日一搜 {day}",
@@ -53,8 +53,14 @@ def render_issue_body(
                 note = f" — {point.note}" if point.note else ""
                 confidence = CONFIDENCE_LABEL.get(point.confidence, point.confidence)
                 lines.append(f"- [{point.title}]({point.url}){note} ｜ 置信度 {confidence}")
-        else:
+        elif not digest.unreferenced:
             lines.append("- 今日无新增条目")
+        if digest.unreferenced:
+            lines.append("")
+            lines.append("**其他新增链接（未纳入摘要）**")
+            lines.append("")
+            for point in digest.unreferenced:
+                lines.append(f"- [{point.title}]({point.url}) — {point.note or '未纳入摘要'}")
         lines += [
             "",
             f"> 新增 {stats.get('accepted', len(digest.points))} / 候选 {stats.get('total', 0)}"
