@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>每日一搜</title>
+    <link>https://github.com/hu-qi/daily-search</link>
+    <description>只推新增的中文话题追踪</description>
+    <language>zh-CN</language>
+    <lastBuildDate>Wed, 11 Nov 2026 00:00:00 +0000</lastBuildDate>
+    <item>
+      <title>昇腾 CANN · 2026-11-11（新增 3 条）</title>
+      <link>https://github.com/hu-qi/daily-search/blob/main/reports/2026-11-11/昇腾-cann.md</link>
+      <guid isPermaLink="false">daily-search:昇腾-cann:2026-11-11</guid>
+      <description>LLM 不可用，已降级为仅新增链接列表。</description>
+      <pubDate>Wed, 11 Nov 2026 00:00:00 +0000</pubDate>
+      <category>昇腾-cann</category>
+    </item>
+    <item>
+      <title>鸿蒙 OHPM · 2026-11-11（新增 2 条）</title>
+      <link>https://github.com/hu-qi/daily-search/blob/main/reports/2026-11-11/鸿蒙-ohpm.md</link>
+      <guid isPermaLink="false">daily-search:鸿蒙-ohpm:2026-11-11</guid>
+      <description>LLM 不可用，已降级为仅新增链接列表。</description>
+      <pubDate>Wed, 11 Nov 2026 00:00:00 +0000</pubDate>
+      <category>鸿蒙-ohpm</category>
+    </item>
+    <item>
+      <title>具身智能政策 · 2026-11-11（新增 2 条）</title>
+      <link>https://github.com/hu-qi/daily-search/blob/main/reports/2026-11-11/具身智能政策.md</link>
+      <guid isPermaLink="false">daily-search:具身智能政策:2026-11-11</guid>
+      <description>LLM 不可用，已降级为仅新增链接列表。</description>
+      <pubDate>Wed, 11 Nov 2026 00:00:00 +0000</pubDate>
+      <category>具身智能政策</category>
+    </item>
+  </channel>
+</rss>
+<!-- daily-search: managed -->

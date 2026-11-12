@@ -1,0 +1,64 @@
+name: issue-comment-agent
+
+on:
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: "Issue 编号"
+        required: true
+      command:
+        description: "指令文本（例如 /why）"
+        required: true
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  respond:
+    # 仅处理 /deep /mute /why，且评论来自 OWNER/MEMBER/COLLABORATOR
+    if: >-
+      ${{ github.event_name == 'workflow_dispatch'
+          || (startsWith(github.event.comment.body, '/')
+              && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Handle command
+        env:
+          COMMENT_BODY: ${{ github.event.comment.body || github.event.inputs.command }}
+          COMMENT_AUTHOR: ${{ github.event.comment.user.login }}
+          COMMENT_ASSOCIATION: ${{ github.event.comment.author_association }}
+          ISSUE_NUMBER: ${{ github.event.issue.number || github.event.inputs.issue_number }}
+        run: |
+          set -uo pipefail
+          printf '%s' "${COMMENT_BODY}" > /tmp/comment-body.md
+          # 指令被拒绝/未识别时 CLI 返回 1，仍要把解释回帖，不能因此中断 step
+          python -m daily_search comment \
+            --body-file /tmp/comment-body.md \
+            --author "${COMMENT_AUTHOR}" \
+            --association "${COMMENT_ASSOCIATION}" \
+            --issue-number "${ISSUE_NUMBER}" > /tmp/reply.md 2>&1 || true
+          cat /tmp/reply.md
+
+      - name: Reply
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number || github.event.inputs.issue_number }}
+        run: |
+          set -euo pipefail
+          gh issue comment "${ISSUE_NUMBER}" --body-file /tmp/reply.md

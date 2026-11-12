@@ -1,0 +1,64 @@
+name: subscribe-from-issue
+
+on:
+  issues:
+    types: [opened, edited]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: "要处理的订阅 Issue 编号"
+        required: true
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  subscribe:
+    # 只处理带「话题名称」段落的 Issue（订阅模板）
+    if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.issue.body, '### 话题名称') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Render topics.yaml change
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number || github.event.inputs.issue_number }}
+        run: |
+          set -euo pipefail
+          printf '%s' "${ISSUE_BODY}" > /tmp/subscribe-body.md
+          python -m daily_search subscribe \
+            --body-file /tmp/subscribe-body.md \
+            --issue-number "${ISSUE_NUMBER}" \
+            --write \
+            --pr-body /tmp/pr-body.md
+
+      - name: Ensure subscription label
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh label create subscription --color bfdadc --description "话题订阅请求" --force || true
+
+      - name: Open pull request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: "subscribe/issue-${{ github.event.issue.number || github.event.inputs.issue_number }}"
+          title: "feat(topics): 新增订阅话题（issue #${{ github.event.issue.number || github.event.inputs.issue_number }}）"
+          body-path: /tmp/pr-body.md
+          commit-message: "feat(topics): 合并订阅 Issue 请求"
+          delete-branch: true
+          labels: subscription

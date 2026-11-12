@@ -1,0 +1,20 @@
+{
+  "topics": {
+    "昇腾-cann": [
+      {"title": "昇腾 CANN 8.0 发布：算子开发与图引擎升级", "url": "https://example.com/a1", "snippet": "CANN 8.0 图引擎与算子框架升级。"},
+      {"title": "cann-ops 新增融合算子示例", "url": "https://example.com/a2", "snippet": "覆盖 FlashAttention 与 MoE。"},
+      {"title": "msprof 算子调优文档更新", "url": "https://example.com/a3", "snippet": "新增耗时拆解视图。"},
+      {"title": "昇腾算子开发训练营报名开启", "url": "https://example.com/a4", "snippet": "面向开发者的线上训练营。"},
+      {"title": "CANN 社区月报第 11 期", "url": "https://example.com/a5", "snippet": "社区问答与版本发布汇总。"},
+      {"title": "Ascend 推理引擎支持新量化格式", "url": "https://example.com/a6", "snippet": "支持 W4A8 量化推理。"}
+    ],
+    "鸿蒙-ohpm": [
+      {"title": "OHPM 中心仓新增依赖安全扫描", "url": "https://example.com/b1", "snippet": "上传包增加漏洞扫描。"},
+      {"title": "ohpm CLI 5.0.6 支持多模块联调", "url": "https://example.com/b2", "snippet": "工作区并行安装。"}
+    ],
+    "具身智能政策": [
+      {"title": "人形机器人创新发展指导意见配套细则征求意见", "url": "https://example.com/c1", "snippet": "明确测试验证要求。"},
+      {"title": "多地发布具身智能行动方案", "url": "https://example.com/c2", "snippet": "开放工厂与康养场景。"}
+    ]
+  }
+}

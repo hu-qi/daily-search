@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "slug": "鸿蒙-ohpm",
+  "updated_at": "2026-11-12T14:59:15+08:00",
+  "entries": [
+    {
+      "url": "https://ohpm.openharmony.cn/#/cn/detail/security-scan",
+      "url_hash": "6d39a4dca6707bbdaf998cd7ce3939e3f8c538af044a0105f2b1ffda7a9ed613",
+      "norm_hash": "4adba144fdf1e4062efd6d9bb200b6c244f4ba67",
+      "title": "OHPM 中心仓新增依赖安全扫描与许可证合规检查",
+      "snippet": "OpenHarmony 三方库中心仓对上传包增加依赖漏洞扫描与许可证合规校验，未通过将阻止发布。",
+      "source": "fixture",
+      "first_seen": "2026-11-11",
+      "last_seen": "2026-11-11"
+    },
+    {
+      "url": "https://gitee.com/openharmony/ohpm/releases",
+      "url_hash": "30b76b88d01ea3dd7ba4e59ac80b3bb3ec79ed1fc5ec3a150af8e0b4f92e761a",
+      "norm_hash": "d8cbc070df300684bb107c2fac772cbe2e0a734c",
+      "title": "openharmony/ohpm 命令行工具发布 5.0.6：支持工作区多模块联调",
+      "snippet": "ohpm 5.0.6 支持工作区内多模块并行安装与本地 link，缩短大型应用构建时间。",
+      "source": "fixture",
+      "first_seen": "2026-11-11",
+      "last_seen": "2026-11-11"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "topics": {
+    "昇腾-cann": [
+      {"title": "昇腾 CANN 8.0 发布：算子开发与图引擎升级", "url": "https://example.com/a1?utm_source=wechat", "snippet": "CANN 8.0 图引擎与算子框架升级。"},
+      {"title": "Atlas A2 训练卡驱动版本更新说明", "url": "https://example.com/n1", "snippet": "驱动与固件配套升级。"},
+      {"title": "CANN 图编译器支持动态 Shape 优化", "url": "https://example.com/n2", "snippet": "动态 Shape 场景编译时间下降 30%。"},
+      {"title": "昇腾社区新增算子调优最佳实践", "url": "https://example.com/n3", "snippet": "覆盖常见算子性能瓶颈定位。"},
+      {"title": "MindSpore 与 CANN 联调示例工程更新", "url": "https://example.com/n4", "snippet": "示例工程适配新版本接口。"},
+      {"title": "CANN 算子开发工具新增 IDE 插件", "url": "https://example.com/n5", "snippet": "支持算子工程模板生成。"},
+      {"title": "昇腾 AI 云上线新的推理实例规格", "url": "https://example.com/n6", "snippet": "新增面向大模型的推理实例。"},
+      {"title": "CANN 算子库新增稀疏矩阵乘样例", "url": "https://example.com/n7", "snippet": "覆盖稀疏场景的性能对比。"},
+      {"title": "昇腾开发者大会公布年度生态数据", "url": "https://example.com/n8", "snippet": "开发者数量与伙伴方案数量更新。"},
+      {"title": "CANN 运维工具支持集群健康巡检", "url": "https://example.com/n9", "snippet": "新增一键巡检与告警联动。"},
+      {"title": "昇腾模型迁移工具新增精度对齐报告", "url": "https://example.com/n10", "snippet": "迁移后自动给出精度差异报告。"},
+      {"title": "CANN 算子测试框架支持自动化用例生成", "url": "https://example.com/n11", "snippet": "按算子签名生成测试用例。"}
+    ],
+    "鸿蒙-ohpm": [
+      {"title": "OpenHarmony 三方库数量突破新里程碑", "url": "https://example.com/m1", "snippet": "中心仓库数量与下载量更新。"},
+      {"title": "OHPM 支持私有仓镜像与离线安装", "url": "https://example.com/m2", "snippet": "企业内网可配置镜像源。"},
+      {"title": "鸿蒙应用包签名校验规则调整", "url": "https://example.com/m3", "snippet": "签名校验规则与调试包处理更新。"}
+    ]
+  }
+}

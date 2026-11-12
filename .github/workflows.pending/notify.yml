@@ -1,0 +1,52 @@
+name: notify
+
+on:
+  workflow_run:
+    workflows: ["daily-search"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "报告日期（YYYY-MM-DD，留空=今天）"
+        required: false
+        default: ""
+      channels:
+        description: "推送渠道（逗号分隔：feishu,wecom）"
+        required: false
+        default: "feishu,wecom"
+
+permissions:
+  contents: read
+
+jobs:
+  push:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Push summary
+        env:
+          REPORT_DATE: ${{ github.event.inputs.date }}
+          CHANNELS: ${{ github.event.inputs.channels }}
+          FEISHU_WEBHOOK_URL: ${{ secrets.FEISHU_WEBHOOK_URL }}
+          WECOM_WEBHOOK_URL: ${{ secrets.WECOM_WEBHOOK_URL }}
+        run: |
+          set -euo pipefail
+          DAY="${REPORT_DATE:-$(date -u +%F)}"
+          if [ ! -f "reports/${DAY}/index.md" ]; then
+            echo "reports/${DAY}/index.md 不存在，跳过"
+            exit 0
+          fi
+          python -m daily_search notify --file "reports/${DAY}/index.md" --channels "${CHANNELS:-feishu,wecom}"
