@@ -74,6 +74,18 @@ def test_duplicate_within_same_batch(deduper: Deduplicator) -> None:
     assert result.stats.repeat_rate == pytest.approx(0.5)
 
 
+def test_semantic_duplicate_within_same_batch(deduper: Deduplicator) -> None:
+    result = deduper.split(
+        "t",
+        _results(
+            ("昇腾 CANN 8.0 发布：算子与图引擎升级", "https://a.com/1", "全面升级"),
+            ("昇腾 CANN 8.0 发布：算子与图引擎升级", "https://b.com/2", "全面升级"),
+        ),
+    )
+    assert result.stats.accepted == 1
+    assert result.stats.duplicates == 1
+
+
 def test_commit_writes_snapshot_and_prunes_old_entries(tmp_path: Path) -> None:
     store = SnapshotStore(tmp_path / "data", retention_days=14)
     deduper = Deduplicator(store, threshold=0.85)
@@ -87,6 +99,61 @@ def test_commit_writes_snapshot_and_prunes_old_entries(tmp_path: Path) -> None:
     entries = deduper.commit("t", result, "2026-11-11")
     urls = {entry.url for entry in entries}
     assert urls == {"https://new.com"}
+
+
+def test_repeat_url_refreshes_last_seen_so_old_news_never_resurfaces(tmp_path: Path) -> None:
+    store = SnapshotStore(tmp_path / "data", retention_days=14)
+    deduper = Deduplicator(store, threshold=0.85)
+    entry = SnapshotEntry(
+        url="https://example.com/old",
+        url_hash="",
+        norm_hash="n",
+        title="昇腾 CANN 8.0 发布：算子与图引擎升级",
+        snippet="全面升级",
+        first_seen="2026-11-01",
+        last_seen="2026-11-01",
+    )
+    store.save("t", [entry], "2026-11-01")
+
+    same = _results(("昇腾 CANN 8.0 发布：算子与图引擎升级", "https://example.com/old", "全面升级"))
+    for day in ("2026-11-05", "2026-11-10"):
+        result = deduper.split("t", same, day)
+        assert result.stats.accepted == 0
+        deduper.commit("t", result, day)
+
+    loaded = store.load("t", "2026-11-20")  # 14 天后裁剪边界：last_seen=11-10 仍应保留
+    assert [item.url for item in loaded] == ["https://example.com/old"]
+    assert loaded[0].first_seen == "2026-11-01"
+    assert loaded[0].last_seen == "2026-11-10"
+
+
+def test_semantic_repeat_refreshes_matched_entry_last_seen(tmp_path: Path) -> None:
+    store = SnapshotStore(tmp_path / "data", retention_days=14)
+    deduper = Deduplicator(store, threshold=0.85)
+    store.save(
+        "t",
+        [
+            SnapshotEntry(
+                url="https://a.com/1",
+                url_hash="",
+                norm_hash="n",
+                title="昇腾 CANN 8.0 发布：算子与图引擎升级",
+                snippet="全面升级",
+                first_seen="2026-11-01",
+                last_seen="2026-11-01",
+            )
+        ],
+        "2026-11-01",
+    )
+    result = deduper.split(
+        "t",
+        _results(("昇腾 CANN 8.0 发布：算子与图引擎升级", "https://b.com/2", "全面升级")),
+        "2026-11-10",
+    )
+    assert result.stats.accepted == 0
+    deduper.commit("t", result, "2026-11-10")
+    loaded = store.load("t", "2026-11-11")
+    assert loaded[0].last_seen == "2026-11-10"
 
 
 def test_snapshot_load_tolerates_corrupt_file(tmp_path: Path) -> None:

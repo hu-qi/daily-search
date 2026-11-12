@@ -38,6 +38,9 @@ class DedupeResult:
     new: list[SearchResult] = field(default_factory=list)
     stats: DedupeStats = field(default_factory=DedupeStats)
     known_entries: list[SnapshotEntry] = field(default_factory=list)
+    # 本次命中的历史条目 key（url_hash；缺失时用规范化 URL 指纹），
+    # commit 时据此刷新 last_seen，避免旧闻在快照裁剪后被当成新增重推。
+    matched_keys: set[str] = field(default_factory=set)
 
 
 class Deduplicator:
@@ -52,30 +55,49 @@ class Deduplicator:
         today: date | str | None = None,
     ) -> DedupeResult:
         existing = self.store.load(slug, today)
-        seen_urls = {entry.url_hash for entry in existing if entry.url_hash}
+        entry_keys = [entry.url_hash or url_hash(entry.url) for entry in existing]
+        seen_urls = set(entry_keys)
         seen_semantics: list[set[str]] = [
             shingles(f"{entry.title} {entry.snippet}") for entry in existing
         ]
+        semantic_keys = list(entry_keys)
 
         accepted: list[SearchResult] = []
         duplicates = 0
+        matched_keys: set[str] = set()
         for result in results:
             fingerprint = url_hash(result.url)
             if fingerprint in seen_urls:
                 duplicates += 1
+                matched_keys.add(fingerprint)
                 continue
             tokens = shingles(f"{result.title} {result.snippet}")
-            if any(jaccard(tokens, known) >= self.threshold for known in seen_semantics):
+            matched_index = next(
+                (
+                    index
+                    for index, known in enumerate(seen_semantics)
+                    if jaccard(tokens, known) >= self.threshold
+                ),
+                None,
+            )
+            if matched_index is not None:
                 duplicates += 1
+                matched_keys.add(semantic_keys[matched_index])
                 continue
             # 同一天内的近似条目同样要收敛
             seen_urls.add(fingerprint)
             seen_semantics.append(tokens)
+            semantic_keys.append(fingerprint)
             accepted.append(result)
 
         stats = DedupeStats(total=len(results), accepted=len(accepted), duplicates=duplicates)
         logger.debug("去重完成 slug=%s stats=%s", slug, stats.to_dict())
-        return DedupeResult(new=accepted, stats=stats, known_entries=existing)
+        return DedupeResult(
+            new=accepted,
+            stats=stats,
+            known_entries=existing,
+            matched_keys=matched_keys,
+        )
 
     def commit(
         self,
@@ -88,8 +110,11 @@ class Deduplicator:
         merged: dict[str, SnapshotEntry] = {}
         for entry in result.known_entries:
             key = entry.url_hash or url_hash(entry.url)
-            if entry.url_hash and not entry.last_seen:
+            if key in result.matched_keys:
+                # 今日再次命中：刷新 last_seen，保证快照保留期从「最近一次出现」开始算
                 entry.last_seen = day
+            elif not entry.last_seen:
+                entry.last_seen = entry.first_seen or day
             merged[key] = entry
 
         for item in result.new:
