@@ -136,6 +136,19 @@ class IssuePublisher:
             json=payload,
             timeout=20,
         )
-        response.raise_for_status()
+        try:
+            response.raise_for_status()
+        except Exception:
+            if not labels:
+                raise
+            # label 未在仓库创建时 GitHub 返回 422；退化为不带 label 再建一次，保证当天有 Issue
+            logger.warning("带 label 创建 Issue 失败，按无 label 重试")
+            response = self._session.post(
+                f"{self._api_base}/repos/{self.repo_full_name}/issues",
+                headers=self._headers(),
+                json={"title": title, "body": body},
+                timeout=20,
+            )
+            response.raise_for_status()
         created = response.json()
         return {"action": "created", "number": created.get("number")}

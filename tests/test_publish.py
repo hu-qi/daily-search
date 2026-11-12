@@ -132,6 +132,28 @@ def test_issue_publisher_updates_existing(fake_session) -> None:
     assert session.calls[1][0] == "PATCH"
 
 
+def test_issue_publisher_retries_without_labels(fake_session) -> None:
+    def raise_422(self=None) -> None:
+        raise RuntimeError("HTTP 422")
+
+    def post(method, url, kwargs):
+        if "labels" in kwargs.get("json", {}):
+            return type("R", (), {"status_code": 422, "json": lambda self: {}, "raise_for_status": raise_422})()
+        return type("R", (), {"status_code": 201, "json": lambda self: {"number": 8}, "raise_for_status": lambda self: None})()
+
+    session = fake_session(
+        [
+            type("R", (), {"status_code": 200, "json": lambda self: [], "raise_for_status": lambda self: None})(),
+            post,
+            post,
+        ]
+    )
+    publisher = IssuePublisher("ghs_test_token", "hu-qi/daily-search", session=session)
+    assert publisher.publish("2026-11-11", "body", labels=["daily-search"]) == {"action": "created", "number": 8}
+    assert "labels" in session.calls[1][2]["json"]
+    assert "labels" not in session.calls[2][2]["json"]
+
+
 def test_im_text_and_skip_without_webhook(fake_session) -> None:
     text = render_im_text("2026-11-11", [_digest()], "hu-qi/daily-search", "main")
     assert "昇腾 CANN" in text

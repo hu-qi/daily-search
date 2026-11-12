@@ -211,7 +211,7 @@ class DailyRunner:
                 build_item(
                     title=f"{digest.topic} · {run_day}（新增 {len(digest.points)} 条）",
                     link=link,
-                    description=digest.summary[:300],
+                    description=redact_text(digest.summary[:300]),
                     day=run_day,
                     slug=digest.slug,
                     pub_date=now,
