@@ -1,0 +1,70 @@
+# 每日一搜 · 话题订阅配置
+# 四级结构：topic / keywords + exclude / subscribers / channels
+defaults:
+  provider_order:
+    - soqq
+    - fallback_rss
+  max_results: 20
+  lookback_days: 1
+  snapshot_retention_days: 14
+  semantic_threshold: 0.85
+  llm_timeout_seconds: 30
+  llm_max_retries: 2
+  llm_token_budget: 8000
+  max_queries_per_topic: 3
+  fallback_feeds:
+    - https://www.solidot.org/index.rss
+    - https://sspai.com/feed
+
+topics:
+  - topic: 昇腾 CANN
+    keywords:
+      - 昇腾
+      - CANN
+      - Ascend
+      - 华为昇腾
+    exclude:
+      - 招聘
+      - 培训广告
+      - 股价
+    subscribers:
+      - hu-qi
+    channels:
+      issue: true
+      feed: true
+      feishu: false
+      wecom: false
+
+  - topic: 鸿蒙 OHPM
+    keywords:
+      - 鸿蒙
+      - HarmonyOS
+      - OHPM
+      - OpenHarmony
+    exclude:
+      - 招聘
+      - 刷机教程
+    subscribers:
+      - hu-qi
+    channels:
+      issue: true
+      feed: true
+      feishu: false
+      wecom: false
+
+  - topic: 具身智能政策
+    keywords:
+      - 具身智能
+      - 人形机器人
+      - 智能机器人
+    exclude:
+      - 概念股
+      - 股价
+      - 涨停
+    subscribers:
+      - hu-qi
+    channels:
+      issue: true
+      feed: true
+      feishu: false
+      wecom: false
