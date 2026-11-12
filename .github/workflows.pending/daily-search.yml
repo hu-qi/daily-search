@@ -1,0 +1,88 @@
+name: daily-search
+
+# 北京时间 08:00 = UTC 00:00
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "运行日期（YYYY-MM-DD，留空=今天）"
+        required: false
+        default: ""
+      topic:
+        description: "只跑单个话题（slug 或话题名，留空=全部）"
+        required: false
+        default: ""
+      dry_run:
+        description: "只输出不落盘（true/false）"
+        required: false
+        default: "false"
+      spike:
+        description: "仅执行 so.qq.com 可行性探测（true/false）"
+        required: false
+        default: "false"
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: daily-search
+  cancel-in-progress: false
+
+jobs:
+  search:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[browser]"
+          python -m playwright install --with-deps chromium
+
+      - name: Spike (so.qq.com reachability)
+        if: ${{ github.event.inputs.spike == 'true' }}
+        run: python -m daily_search spike --json | tee spike.json
+
+      - name: Daily search
+        if: ${{ github.event.inputs.spike != 'true' }}
+        env:
+          DATE: ${{ github.event.inputs.date }}
+          TOPIC: ${{ github.event.inputs.topic }}
+          DRY_RUN: ${{ github.event.inputs.dry_run }}
+          REPO_FULL_NAME: ${{ github.repository }}
+          BASE_BRANCH: ${{ github.ref_name }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_MODEL: ${{ secrets.LLM_MODEL }}
+        run: |
+          set -euo pipefail
+          ARGS=(run --root .)
+          if [ -n "${DATE}" ]; then ARGS+=(--date "${DATE}"); fi
+          if [ -n "${TOPIC}" ]; then ARGS+=(--topic "${TOPIC}"); fi
+          if [ "${DRY_RUN}" = "true" ]; then ARGS+=(--dry-run --no-issue); fi
+          python -m daily_search "${ARGS[@]}"
+
+      - name: Commit reports
+        if: ${{ github.event.inputs.spike != 'true' && github.event.inputs.dry_run != 'true' }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add reports data feed.xml
+          if git diff --cached --quiet; then
+            echo "无新增内容，跳过提交"
+            exit 0
+          fi
+          git commit -m "chore(daily-search): $(date -u +%F) 报告与快照"
+          git push

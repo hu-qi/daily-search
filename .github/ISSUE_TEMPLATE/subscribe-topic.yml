@@ -1,0 +1,55 @@
+name: 订阅话题
+description: 提交一个要每日追踪的中文话题；校验通过后机器人会自动开 PR 更新 topics.yaml
+title: "[订阅] "
+labels: ["subscription"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        这个话题会进入每日一搜：每天搜索一次，**只推送比昨天新增/变化**的内容，并附原始链接。
+
+        提交后 `subscribe-from-issue` workflow 会校验字段并开 PR 修改 `topics.yaml`；合并后下一轮运行生效。
+
+  - type: input
+    id: topic
+    attributes:
+      label: 话题名称
+      description: 中文短名，会作为报告文件名（例如「昇腾 CANN」）
+      placeholder: 昇腾 CANN
+    validations:
+      required: true
+
+  - type: input
+    id: keywords
+    attributes:
+      label: 关键词（逗号分隔）
+      description: 至少一个；用于搜索与结果过滤
+      placeholder: 昇腾, CANN, Ascend
+    validations:
+      required: true
+
+  - type: input
+    id: exclude
+    attributes:
+      label: 排除词（逗号分隔，可留空）
+      description: 命中即丢弃，用于降噪
+      placeholder: 招聘, 股价, 培训广告
+
+  - type: input
+    id: subscribers
+    attributes:
+      label: 订阅人（GitHub 用户名，逗号分隔）
+      placeholder: hu-qi
+
+  - type: checkboxes
+    id: channels
+    attributes:
+      label: 发布渠道
+      description: Issue 与 RSS 为默认渠道；IM 渠道需仓库已配置对应 Webhook Secret
+      options:
+        - label: Issue（每日汇总 Issue）
+          required: true
+        - label: RSS feed（feed.xml）
+          required: true
+        - label: 飞书
+        - label: 企业微信

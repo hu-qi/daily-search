@@ -1,0 +1,55 @@
+name: 反馈误报
+description: 报告「不该出现的内容」或「漏掉的内容」，用于调优关键词与去重
+title: "[误报] "
+labels: ["feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        谢谢反馈。请贴出报告里的链接与原因，维护者会据此调整 `keywords` / `exclude` 或语义去重阈值。
+
+  - type: input
+    id: topic
+    attributes:
+      label: 相关话题
+      placeholder: 昇腾 CANN
+    validations:
+      required: true
+
+  - type: input
+    id: report_date
+    attributes:
+      label: 报告日期
+      description: reports/YYYY-MM-DD 中的日期
+      placeholder: "2026-11-11"
+    validations:
+      required: true
+
+  - type: input
+    id: url
+    attributes:
+      label: 出问题的链接
+      placeholder: https://example.com/article
+    validations:
+      required: true
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: 问题类型
+      options:
+        - 不该出现（噪音 / 广告 / 旧闻）
+        - 漏掉了（明明是新内容却没推送）
+        - 链接打不开或与标题不符
+        - 重复推送（同一事件出现多条）
+    validations:
+      required: true
+
+  - type: textarea
+    id: detail
+    attributes:
+      label: 补充说明
+      description: 期望的修正方式（例如「加入排除词：概念股」）
+      placeholder: 希望把「概念股」加入排除词。
+    validations:
+      required: false
